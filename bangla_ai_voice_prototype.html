@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10243b">
+<title>Bangla AI Voice — প্রাথমিক সংস্করণ</title>
+<style>
+:root{--navy:#10243b;--blue:#246bce;--ink:#172235;--muted:#66758a;--line:#dce4ee;--bg:#f3f6fb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Noto Sans Bengali",sans-serif;color:var(--ink)}
+header{background:linear-gradient(135deg,#10243b,#174c79);color:#fff;padding:28px 18px 32px;text-align:center}
+header h1{margin:0 0 7px;font-size:27px}header p{margin:0;color:#d7e7f8;font-size:14px}
+main{max-width:680px;margin:-14px auto 30px;padding:0 14px}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 8px 24px #142c4610}
+label{display:block;font-weight:700;margin:0 0 8px}textarea{width:100%;min-height:190px;border:1px solid var(--line);border-radius:12px;padding:13px;font:16px/1.65 inherit;resize:vertical;outline-color:var(--blue)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.field{flex:1;min-width:145px;margin-top:14px}select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}
+input[type=range]{width:100%;accent-color:var(--blue)}.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:16px}
+button{border:0;border-radius:11px;padding:13px 10px;font:700 15px inherit;cursor:pointer;background:#eaf1fb;color:#174a83}
+button.primary{background:var(--blue);color:#fff}.note{font-size:13px;color:var(--muted);line-height:1.6;margin:12px 0 0}.status{font-size:13px;color:#315d91;margin-top:12px;min-height:20px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
+@media(min-width:560px){.actions{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header><h1>🎙️ Bangla AI Voice</h1><p>বাংলা লেখা শুনুন আপনার ফোনের উপলব্ধ কণ্ঠে</p></header>
+<main>
+<section class="panel">
+<label for="text">আপনার বাংলা লেখা লিখুন</label>
+<textarea id="text" placeholder="এখানে আপনার ডকুমেন্টারি বা গল্পের স্ক্রিপ্ট লিখুন...">একদিন বাংলার ইতিহাসে ঘটে গিয়েছিল এক ভয়ংকর ঘটনা। সেই ঘটনার প্রভাব বদলে দিয়েছিল একটি সমগ্র জাতির ভবিষ্যৎ।</textarea>
+<div class="row">
+ <div class="field"><label for="voice">উপলব্ধ বাংলা কণ্ঠ</label><select id="voice"><option>কণ্ঠ খোঁজা হচ্ছে...</option></select></div>
+ <div class="field"><label for="rate">কথার গতি: <span id="rateval">1.0x</span></label><input id="rate" type="range" min=".7" max="1.25" step=".05" value="1"></div>
+</div>
+<div class="actions">
+<button class="primary" id="speak">▶ ভয়েস চালু</button><button id="pause">Ⅱ বিরতি</button><button id="resume">▶ আবার চালু</button><button id="stop">■ বন্ধ</button>
+</div>
+<div class="status" id="status" aria-live="polite">বাংলা কণ্ঠ খুঁজছি…</div>
+<p class="note">এটি প্রথম পরীক্ষামূলক সংস্করণ। কণ্ঠের মান ও পুরুষ/নারী কণ্ঠের প্রাপ্যতা আপনার Android ফোন ও ব্রাউজারে ইনস্টল করা voice-এর ওপর নির্ভর করে।</p>
+</section>
+<section class="panel">
+<strong>পরবর্তী ধাপে যোগ হবে</strong>
+<p class="note">নিজের অনুমোদিত ভয়েস ক্লোন, উন্নত পুরুষ ও নারী AI কণ্ঠ, এবং MP3 ডাউনলোড। এগুলোর জন্য নিরাপদ AI সার্ভার/API যুক্ত করতে হবে।</p>
+</section>
+</main>
+<footer>Bangla AI Voice · প্রাথমিক সংস্করণ · আপনার লেখা কোনো সার্ভারে পাঠানো হয় না</footer>
+<script>
+const synth=window.speechSynthesis, voiceSelect=document.getElementById('voice'), statusEl=document.getElementById('status');
+let voices=[];
+function loadVoices(){
+ voices=synth ? synth.getVoices() : [];
+ const bn=voices.filter(v=>/^bn([_-]|$)/i.test(v.lang));
+ voiceSelect.innerHTML='';
+ if(!bn.length){
+  const o=document.createElement('option');o.textContent='এই ডিভাইসে বাংলা কণ্ঠ পাওয়া যায়নি';o.value='';voiceSelect.append(o);
+  statusEl.textContent='বাংলা কণ্ঠ পাওয়া যায়নি। Android Settings থেকে বাংলা Text-to-speech voice ইনস্টল করে আবার চেষ্টা করুন।';
+  return;
+ }
+ bn.forEach((v,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=v.name+' ('+v.lang+')';voiceSelect.append(o)});
+ statusEl.textContent=bn.length+'টি বাংলা কণ্ঠ পাওয়া গেছে। পুরুষ/নারী কণ্ঠের পরিচয় ফোনভেদে আলাদা হতে পারে.';
+}
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices}else{statusEl.textContent='এই ব্রাউজারে Speech Synthesis সমর্থিত নয়। Chrome দিয়ে খুলে দেখুন.'}
+document.getElementById('rate').addEventListener('input',e=>document.getElementById('rateval').textContent=Number(e.target.value).toFixed(2)+'x');
+document.getElementById('speak').onclick=()=>{
+ if(!synth)return;
+ const text=document.getElementById('text').value.trim();
+ if(!text){statusEl.textContent='আগে কিছু বাংলা লেখা লিখুন।';return}
+ if(!voices.length){loadVoices();return}
+ synth.cancel();
+ const chunks=text.match(/[^।!?]+[।!?]?/g)||[text];
+ let index=0;
+ function next(){
+  if(index>=chunks.length){statusEl.textContent='পড়া শেষ হয়েছে।';return}
+  const u=new SpeechSynthesisUtterance(chunks[index++]);
+  u.lang='bn-BD';u.rate=Number(document.getElementById('rate').value);
+  const chosen=voices.filter(v=>/^bn([_-]|$)/i.test(v.lang))[Number(voiceSelect.value)];
+  if(chosen)u.voice=chosen;
+  u.onend=next;u.onerror=()=>{statusEl.textContent='ভয়েস চালাতে সমস্যা হয়েছে। অন্য বাংলা কণ্ঠ চেষ্টা করুন.'};
+  synth.speak(u);
+ }
+ statusEl.textContent='আপনার লেখা পড়ে শোনানো হচ্ছে…';next();
+};
+document.getElementById('pause').onclick=()=>{if(synth)synth.pause()};
+document.getElementById('resume').onclick=()=>{if(synth)synth.resume()};
+document.getElementById('stop').onclick=()=>{if(synth)synth.cancel();statusEl.textContent='পড়া বন্ধ করা হয়েছে।'};
+</script>
+</body>
+</html>
